@@ -10,6 +10,8 @@ import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
 
 import com.example.regresoacasa.directionhelpers.FetchURL;
 import com.example.regresoacasa.directionhelpers.TaskLoadedCallback;
@@ -28,12 +30,15 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
+import java.util.Properties;
+
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, TaskLoadedCallback {
 
     GoogleMap map;
-    Button btnObtenerRuta, btnDefinirCasa;
+    Button btnObtenerRuta;
 
     MarkerOptions direccion1, direccion2;
+    EditText txtDestino;
     Polyline currentPolyline;
 
     private final LatLng defaultLocation = new LatLng(-33.8523341, 151.2106085);
@@ -51,17 +56,27 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         setContentView(R.layout.activity_main);
 
         btnObtenerRuta = findViewById(R.id.btnObtenerRuta);
-        btnDefinirCasa = findViewById(R.id.btnDefinirCasa);
+        txtDestino = findViewById(R.id.txtDireccionDestino);
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         btnObtenerRuta.setOnClickListener(v -> {
             //Dibuja la ruta
-            new FetchURL(MainActivity.this).execute(getUrl(direccion1.getPosition(), direccion2.getPosition(), "driving"), "driving");
-        });
+            String destino = txtDestino.getText().toString().trim();
+            if(!destino.isEmpty()){
+                destino = destino.replaceAll("\\s+","+");
+                new FetchURL(MainActivity.this).execute(getUrl(direccion1.getPosition(), destino, "driving"), "driving");
 
-        btnDefinirCasa.setOnClickListener(v -> {
-            //Define algún punto como casa
+                //creo que la única forma de Marcar el punto destino
+                //es después de obtener la respuesta de la API
+                //porque en la respuesta vienen las coordenadas
+                /*direccion2 = new MarkerOptions()
+                        .position(new LatLng(20.155678269425223, -101.1663443668007))
+                        .title("Pollo Feliz Uriangato");
+                map.addMarker(direccion2);*/
+            }
+            else{
+                Toast.makeText(this,"Ingresa una dirección de destino",Toast.LENGTH_LONG).show();
+            }
         });
-
         MapFragment mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.mapFrag);
         mapFragment.getMapAsync(this);
     }
@@ -74,11 +89,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         getDeviceLocation();
     }
 
-    private String getUrl(LatLng origin, LatLng dest, String directionMode) {
+    private String getUrl(LatLng origin, String dest, String directionMode) {
         // Origin of route
         String str_origin = "origin=" + origin.latitude + "," + origin.longitude;
         // Destination of route
-        String str_dest = "destination=" + dest.latitude + "," + dest.longitude;
+        String str_dest = "destination=" + dest;
         // Mode
         String mode = "mode=" + directionMode;
         // Building the parameters to the web service
@@ -86,7 +101,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // Output format
         String output = "json";
         // Building the url to the web service
-        String url = "https://maps.googleapis.com/maps/api/directions/" + output + "?" + parameters + "&key=" + getString(R.string.google_maps_key);
+        String url = "https://maps.googleapis.com/maps/api/directions/" + output + "?" + parameters + "&key=" + BuildConfig.MAPS_API_KEY;
         return url;
     }
 
@@ -126,12 +141,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 direccion1 = new MarkerOptions()
                                         .position(new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude()))
                                         .title("Ubicación Actual");
-                                direccion2 = new MarkerOptions()
-                                        .position(new LatLng(20.155678269425223, -101.1663443668007))
-                                        .title("Pollo Feliz Uriangato");
-                                map.addMarker(direccion1);
-                                map.addMarker(direccion2);
-
+                                
                                 map.moveCamera(CameraUpdateFactory.newLatLngZoom(
                                         new LatLng(lastKnownLocation.getLatitude(),
                                                 lastKnownLocation.getLongitude()), DEFAULT_ZOOM));

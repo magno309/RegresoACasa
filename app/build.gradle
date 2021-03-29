@@ -1,7 +1,10 @@
 plugins {
     id 'com.android.application'
 }
-
+def localProperties = new Properties()
+if (rootProject.file("local.properties").exists()) {
+    localProperties.load(rootProject.file("local.properties").newDataInputStream())
+}
 android {
     compileSdkVersion 30
     buildToolsVersion "30.0.2"
@@ -15,15 +18,13 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
-        Properties properties = new Properties()
-        if (rootProject.file("local.properties").exists()) {
-            properties.load(rootProject.file("local.properties").newDataInputStream())
-        }
-        manifestPlaceholders = [ mapsApiKey : properties.getProperty("MAPS_API_KEY", "") ]
-
+        manifestPlaceholders = [ mapsApiKey : localProperties.getProperty("MAPS_API_KEY", "") ]
     }
 
     buildTypes {
+        debug{
+            buildConfigField("String", "MAPS_API_KEY", "\"" + localProperties.getProperty("MAPS_API_KEY", "") + "\"")
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
