@@ -14,6 +14,7 @@ import android.widget.Button;
 import com.example.regresoacasa.directionhelpers.FetchURL;
 import com.example.regresoacasa.directionhelpers.TaskLoadedCallback;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
@@ -24,6 +25,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, TaskLoadedCallback {
@@ -50,7 +52,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         btnObtenerRuta = findViewById(R.id.btnObtenerRuta);
         btnDefinirCasa = findViewById(R.id.btnDefinirCasa);
-
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         btnObtenerRuta.setOnClickListener(v -> {
             //Dibuja la ruta
             new FetchURL(MainActivity.this).execute(getUrl(direccion1.getPosition(), direccion2.getPosition(), "driving"), "driving");
@@ -70,14 +72,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         getLocationPermission();
         updateLocationUI();
         getDeviceLocation();
-
-        //Marcar posición actual
-        direccion2 = new MarkerOptions()
-                .position(new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude()))
-                .title("Actual");
-
-        map.addMarker(direccion2);
-        //map.addMarker(direccion1);
     }
 
     private String getUrl(LatLng origin, LatLng dest, String directionMode) {
@@ -124,10 +118,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 locationResult.addOnCompleteListener(this, new OnCompleteListener<Location>() {
                     @Override
                     public void onComplete(@NonNull Task<Location> task) {
-                        if (task.isSuccessful()) {
+                        if (task.isSuccessful()){
                             // Set the map's camera position to the current location of the device.
                             lastKnownLocation = task.getResult();
                             if (lastKnownLocation != null) {
+                                //Marcar posición actual
+                                direccion1 = new MarkerOptions()
+                                        .position(new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude()))
+                                        .title("Ubicación Actual");
+                                direccion2 = new MarkerOptions()
+                                        .position(new LatLng(20.155678269425223, -101.1663443668007))
+                                        .title("Pollo Feliz Uriangato");
+                                map.addMarker(direccion1);
+                                map.addMarker(direccion2);
+
                                 map.moveCamera(CameraUpdateFactory.newLatLngZoom(
                                         new LatLng(lastKnownLocation.getLatitude(),
                                                 lastKnownLocation.getLongitude()), DEFAULT_ZOOM));
@@ -154,10 +158,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         try {
             if (locationPermissionGranted) {
                 map.setMyLocationEnabled(true);
-                map.getUiSettings().setMyLocationButtonEnabled(true);
+                //map.getUiSettings().setMyLocationButtonEnabled(true);
             } else {
                 map.setMyLocationEnabled(false);
-                map.getUiSettings().setMyLocationButtonEnabled(false);
+                //map.getUiSettings().setMyLocationButtonEnabled(false);
                 lastKnownLocation = null;
                 getLocationPermission();
             }
